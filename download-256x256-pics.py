@@ -1,6 +1,6 @@
 ###
-#
-# Usage: `$ python download-256x256-pics.py [labelId] [labelsFile] [screenshots/screendumps] [if screendumps, set amount of caps per video, max 128]`
+# READ THE README.MD FILE IN THE REPO FOR MORE INFO!
+# Usage: `$ python download-256x256-pics.py [labelId] [labelsFile] [max downloads or 0 for all] [screenshots/screendumps] [if screendumps, set amount of caps per video, max 128]`
 ###
 
 import csv, PIL, sys, os, subprocess
@@ -52,6 +52,10 @@ with open(sys.argv[2], 'rb') as labelfile:
         if sys.argv[1] in label:
             totalLabels = totalLabels + 1
 
+# Determine the amount to be downloaded
+if totalLabels > int(sys.argv[3]):
+    totalLabels = int(sys.argv[3])
+
 # Open label file
 with open(sys.argv[2], 'rb') as labelfile:
     # Itterate over the labels
@@ -60,25 +64,27 @@ with open(sys.argv[2], 'rb') as labelfile:
         if sys.argv[1] in label:
             # Show progress
             print("Downloading and proccessing (" + str(totalLabelsDone) + "/" + str(totalLabels) + "): " + label[0])
-            
+            sys.stdout.flush()
             # download video
-            if sys.argv[3] == "screendumps":
+            if sys.argv[4] == "screendumps":
                 # Start the MP4 download
                 subprocess.check_output('youtube-dl -f bestvideo[ext=mp4] --output "results/' + label[0] + '.mp4" "http://www.youtube.com/watch?v=' + label[0] + '"', shell=True)
                 # Get the duration of the video
                 videoInSeconds = int(float(subprocess.check_output("ffprobe -i results/" + label[0] + ".mp4 -show_format -v quiet | sed -n 's/duration=//p'", shell=True)))
                 # Make label dir
                 os.system("mkdir -p results/" + sys.argv[1])
+                # Calculate amount of snapshots, adds 1 before and 1 after to avoid intro's and outro's
+                snapInterval = videoInSeconds / (int(sys.argv[5]) + 2)
                 # Take 20 second snapshots
-                snapSecCount = 5 # start at 5 sec to avoid intros
+                snapSecCount = snapInterval # start at 5 sec to avoid intros
                 snapCount = 0 # count actual snapshots
-                while (snapSecCount < videoInSeconds):
+                while (snapSecCount < ((int(sys.argv[5]) + 1) * snapInterval)):
                     # Get image
                     out = subprocess.check_output("ffmpeg -loglevel panic -i results/" + label[0] + ".mp4 -ss " + str(snapSecCount) + " -vframes 1 results/" + sys.argv[1] + "/" + label[0] + "-" + str(snapCount) + ".png", shell=True)
                     # Resize and crop
                     resizeAndCrop("./results/" + sys.argv[1] + "/" + label[0] + "-" + str(snapCount) + ".png")
                     # edit counter
-                    snapSecCount = snapSecCount + 20
+                    snapSecCount = snapSecCount + snapInterval
                     snapCount = snapCount + 1
                 # Remove the file
                 os.system("rm results/" + label[0] + ".mp4")
@@ -86,9 +92,12 @@ with open(sys.argv[2], 'rb') as labelfile:
             else:
                 print("Not implemented yet")
 
+            # determine if needs to stop 
+            if totalLabels == totalLabelsDone:
+                break
+
             # Total labels done + 1
             totalLabelsDone = totalLabelsDone + 1
 
-        break # for now, a break
-
 print("DONE")
+sys.stdout.flush()
