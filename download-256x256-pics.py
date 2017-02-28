@@ -12,34 +12,33 @@ os.path.dirname(os.path.realpath(__file__))
 # function for resizing and cropping to 256x256
 def resizeAndCrop(imgPath):
     
-    with Image.open(imgPath) as im:
+    im = Image.open(imgPath)
 
-        # remove original
-        os.remove(imgPath)
-        
-        # Get size
-        x, y = im.size
+    # remove original
+    os.remove(imgPath)
+    
+    # Get size
+    x, y = im.size
 
-        # New sizes
-        yNew = 256
-        xNew = yNew # should be equal
+    # New sizes
+    yNew = 256
+    xNew = yNew # should be equal
 
-        # First, set right size
-        if x > y:
-            # Y is smallest, figure out relation to 256
-            xNew = round(x * 256 / y)
-        else:
-            yNew = round(y * 256 / x)
+    # First, set right size
+    if x > y:
+        # Y is smallest, figure out relation to 256
+        xNew = round(x * 256 / y)
+    else:
+        yNew = round(y * 256 / x)
 
-        # resize
-        im.resize((int(xNew), int(yNew)), PIL.Image.ANTIALIAS)
+    # resize
+    im = im.resize((int(xNew), int(yNew)), PIL.Image.ANTIALIAS)
 
-        # crop
-        im.crop(((int(xNew) - 256)/2, (int(yNew) - 256)/2, (int(xNew) + 256)/2, (int(yNew) + 256)/2))
+    # crop
+    im = im.crop(((int(xNew) - 256)/2, (int(yNew) - 256)/2, (int(xNew) + 256)/2, (int(yNew) + 256)/2))
 
-        # save
-        print("SAVE", imgPath + "2")
-        im.save(imgPath)
+    # save
+    im.save(imgPath)
 
 # Make results dir
 os.system("mkdir -p results")
